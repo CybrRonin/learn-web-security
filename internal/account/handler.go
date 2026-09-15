@@ -64,6 +64,11 @@ func (handler *Handler) Page(responseWriter http.ResponseWriter, request *http.R
 	if err := handler.renderPage(responseWriter, http.StatusOK, current, ""); err != nil {
 		handler.internalError(responseWriter, request, err)
 	}
+	fields := make(map[string]any)
+	fields["userId"] = current.User.ID
+	fields["email"] = current.User.Email
+	fields["expiresAt"] = formatTimestamp(current.Session.ExpiresAt)
+	_ = handler.logger.Event("account_accessed", fields)
 }
 
 func (handler *Handler) UpdateEmail(responseWriter http.ResponseWriter, request *http.Request) {
