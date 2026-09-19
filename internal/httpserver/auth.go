@@ -239,7 +239,7 @@ func (handler *authHandler) Logout(responseWriter http.ResponseWriter, request *
 		return
 	}
 	if found {
-		err := handler.accounts.RevokeSession(request.Context(), *&currentSession.Session.Token)
+		err := handler.accounts.RevokeSession(request.Context(), currentSession.Session.Token)
 		if err != nil {
 			handler.internalError(responseWriter, request, err)
 			return
