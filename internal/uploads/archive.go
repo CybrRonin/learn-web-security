@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -87,7 +86,10 @@ func ExtractTaxDocumentArchive(encryptionKeyring Keyring, contents []byte, extra
 		if err != nil {
 			return ExtractedTaxDocumentArchive{}, &ArchiveImportError{Message: "Choose a valid ZIP archive.", StatusCode: 400}
 		}
-		contentType := mime.TypeByExtension(filepath.Ext(entry.Name))
+		contentType, _, valid := detectDocumentType(entryContents)
+		if !valid {
+			return ExtractedTaxDocumentArchive{}, &ArchiveImportError{Message: "Archive contains an unsupported tax document.", StatusCode: http.StatusBadRequest}
+		}
 		if contentType == "" {
 			contentType = "application/octet-stream"
 		}
