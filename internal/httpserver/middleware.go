@@ -77,9 +77,10 @@ func validateRequestOrigin(appOrigin string, renderer *templates.Renderer) middl
 	}
 }
 
-func setCSPHeader(next http.Handler) http.Handler {
+func contentSecurityPolicy(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-		responseWriter.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'")
+		nonceValue := httpx.CSPNonce(request.Context())
+		responseWriter.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'nonce-"+nonceValue+"'; img-src 'self' data:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'")
 		next.ServeHTTP(responseWriter, request)
 	})
 }
