@@ -60,20 +60,34 @@ func validateRequestOrigin(appOrigin string, renderer *templates.Renderer) middl
 	}
 }
 
-func contentSecurityPolicy(next http.Handler) http.Handler {
+func setSecurityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 		nonceValue := httpx.CSPNonce(request.Context())
-		responseWriter.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'nonce-"+nonceValue+"'; img-src 'self' data:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'")
-		responseWriter.Header().Set("X-Frame-Options", "SAMEORIGIN")
+		responseWriter.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'nonce-"+nonceValue+"'; style-src 'self'; img-src 'self' data:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'")
 		responseWriter.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		responseWriter.Header().Set("X-Content-Type-Options", "nosniff")
+		responseWriter.Header().Set("X-Frame-Options", "SAMEORIGIN")
+
+		responseWriter.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
+		responseWriter.Header().Set("Cross-Origin-Resource-Policy", "same-origin")
+		responseWriter.Header().Set("Origin-Agent-Cluster", "?1")
+		responseWriter.Header().Set("X-DNS-Prefetch-Control", "off")
+		responseWriter.Header().Set("X-Download-Options", "noopen")
+		responseWriter.Header().Set("X-Permitted-Cross-Domain-Policies", "none")
+		responseWriter.Header().Set("X-XSS-Protection", "0")
+
+		next.ServeHTTP(responseWriter, request)
+	})
+}
+
+func contentSecurityPolicy(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 		next.ServeHTTP(responseWriter, request)
 	})
 }
 
 func setNosniffHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-		responseWriter.Header().Set("X-Content-Type-Options", "nosniff")
-		next.ServeHTTP(responseWriter, request)
 	})
 }
 
