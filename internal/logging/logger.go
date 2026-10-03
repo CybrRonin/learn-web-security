@@ -3,12 +3,22 @@ package logging
 import (
 	"encoding/json"
 	"fmt"
-	"maps"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
 )
+
+const redactedValue = "[REDACTED]"
+
+var sensitiveFields = map[string]struct{}{
+	"sessionId":   {},
+	"resetToken":  {},
+	"resetLink":   {},
+	"secret":      {},
+	"adminNotes":  {},
+	"storagePath": {},
+}
 
 type Logger struct {
 	mutex sync.Mutex
@@ -36,7 +46,14 @@ func (logger *Logger) Event(eventName string, fields map[string]any) error {
 		"timestamp": logger.now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		"event":     eventName,
 	}
-	maps.Copy(record, fields)
+
+	for name, value := range fields {
+		if _, sensitive := sensitiveFields[name]; sensitive {
+			record[name] = redactedValue
+			continue
+		}
+		record[name] = value
+	}
 
 	logger.mutex.Lock()
 	defer logger.mutex.Unlock()
