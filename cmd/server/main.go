@@ -16,6 +16,7 @@ import (
 	"github.com/bootdotdev/learn-web-security/internal/database"
 	"github.com/bootdotdev/learn-web-security/internal/httpserver"
 	"github.com/bootdotdev/learn-web-security/internal/logging"
+	"github.com/bootdotdev/learn-web-security/internal/storage"
 )
 
 func main() {
@@ -50,6 +51,11 @@ func run(ctx context.Context) error {
 		return err
 	}
 	defer appLogger.Close()
+
+	keyring, err := storage.NewKeyring(appConfig.ActiveEncryptionKeyVersion, appConfig.EncryptionKeys)
+	if err != nil {
+		return fmt.Errorf("create encryption keyring: %w", err)
+	}
 	application, err := httpserver.New(databaseConnection, appLogger, httpserver.Options{
 		AppOrigin:               appConfig.AppOrigin,
 		TrustedProxyHops:        appConfig.TrustedProxyHops,
@@ -58,6 +64,7 @@ func run(ctx context.Context) error {
 		MaxUploadBytes:          appConfig.MaxUploadBytes,
 		PawPalAPIKey:            appConfig.PawPalAPIKey,
 		AcornFulfillmentDelay:   appConfig.AcornFulfillmentDelay,
+		EncryptionKeyring:       keyring,
 		DownloadSigningKey:      appConfig.DownloadSigningKey,
 		DataDirectory:           filepath.Join(workingDirectory, "data"),
 		FixtureDirectory:        filepath.Join(workingDirectory, "data", "fixtures"),
