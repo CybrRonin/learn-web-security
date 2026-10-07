@@ -66,6 +66,16 @@ func Verify(password, encodedHash string) bool {
 	return subtle.ConstantTimeCompare(argonHash.derivedKey, derivedCandidate) == 1
 }
 
-func NeedsRehash(string) bool {
+func NeedsRehash(encodedHash string) bool {
+	// legacy SHA-256 hashses are exactly 64 hex characters long
+	if _, ok := decodeLegacyHash(encodedHash); ok {
+		return true
+	}
+	argonHash, valid := parseArgon2idHash(encodedHash)
+	if valid {
+		if argonHash.version != argon2.Version || argonHash.iterations != argonIterations || argonHash.memoryKiB != argonMemory || argonHash.parallelism != argonLanes || len(argonHash.derivedKey) != argonKeySize {
+			return true
+		}
+	}
 	return false
 }
